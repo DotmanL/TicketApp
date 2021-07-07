@@ -1,21 +1,14 @@
-import { scrypt, randomBytes } from 'crypto';
-import { promisify } from 'util';
+import bcrypt from 'bcrypt';
 
-//chnage scrypt callback function to promise based functions so we can use async await
-const scryptAsync = promisify(scrypt);
-
-export class Password {
+export class PasswordManager {
   static async toHash(password: string) {
-    const salt = randomBytes(8).toString('hex');
-    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    return `${buf.toString('hex')}.${salt}`;
+    return hashedPassword;
   }
 
   static async compare(storedPassword: string, suppliedPassword: string) {
-    const [hashedPassword, salt] = storedPassword.split('.');
-    const buf = (await scryptAsync(suppliedPassword, salt, 64)) as Buffer;
-
-    return buf.toString('hex') === hashedPassword;
+    return await bcrypt.compare(suppliedPassword, storedPassword);
   }
 }

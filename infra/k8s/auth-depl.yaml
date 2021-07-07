@@ -15,6 +15,12 @@ spec:
       containers:
         - name: auth
           image: dotmanl/auth
+          env:
+            - name: jwt_key
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: jwt_key
 
 ---
 apiVersion: v1

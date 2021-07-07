@@ -1,6 +1,8 @@
 import express from 'express';
 import 'express-async-errors';
 import { json } from 'body-parser';
+import cookiesession from 'cookie-session';
+
 import { currentUserRouter } from './routes/current-user';
 import { signinRouter } from './routes/signin';
 import { signupRouter } from './routes/signup';
@@ -8,10 +10,16 @@ import { signoutRouter } from './routes/signout';
 import { errorHandler } from './middlewares/error-handler';
 import { NotFoundError } from './errors/not-found-error';
 import mongoose from 'mongoose';
-import { createCallChain } from 'typescript';
 
 const app = express();
+app.set('trust proxy', true);
 app.use(json());
+app.use(
+  cookiesession({
+    signed: false, //disabled encryption since out jwt are encrypted already
+    secure: true,
+  })
+);
 
 app.use(currentUserRouter);
 app.use(signinRouter);
@@ -25,6 +33,9 @@ app.all('*', async () => {
 app.use(errorHandler);
 
 const connectDB = async () => {
+  if (!process.env.jwt_key) {
+    throw new Error('jwt_key must be defined');
+  }
   try {
     await mongoose.connect('mongodb://auth-mongo-srv:27017/auth', {
       useNewUrlParser: true,
@@ -33,7 +44,7 @@ const connectDB = async () => {
     });
     console.log('connected to db');
   } catch (err) {
-    console.log(err);
+    console.log(err, "mongo fail");
   }
   app.listen(3000, () => {
     console.log('Listening on port 3000');
